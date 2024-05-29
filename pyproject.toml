@@ -1,0 +1,70 @@
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[project]
+name = "pytest-sandbox"
+dynamic = ["version"]
+description = "disable network access in pytest and mark xfail"
+keywords = ["pytest", "sandbox"]
+authors = [{ name = "natsukium", email = "tomoya.otabi@gmail.com" }]
+dependencies = ["pytest>=6.2"]
+requires-python = ">=3.8"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+classifiers = [
+  "Development Status :: 1 - Planning",
+  "Environment :: Plugins",
+  "Framework :: Pytest",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+  "Topic :: Software Development :: Testing",
+]
+
+[project.entry-points.pytest11]
+pytest-sandbox = "pytest_sandbox"
+
+[project.urls]
+Homepage = "https://github.com/natsukium/pytest-sandbox"
+Repository = "https://github.com/natsukium/pytest-sandbox.git"
+Issues = "https://github.com/natsukium/pytest-sandbox/issues"
+Changelog = "https://github.com/natsukium/pytest-sandbox/blob/master/CHANGELOG.md"
+
+[project.optional-dependencies]
+testing = [
+  "aiohttp>=3.9.5",
+  "httpx>=0.27.0",
+  "pytest-asyncio>=0.23.7",
+  "requests>=2.32.3",
+]
+
+[tool.pdm]
+distribution = true
+
+[tool.pdm.version]
+source = "file"
+path = "src/pytest_sandbox/__init__.py"
+
+[tool.pytest.ini_options]
+markers = ["network: mark tests that require internet access"]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+include = ["src/pytest_sandbox"]
+reportMissingTypeStubs = false
+reportUnknownMemberType = false
+
+[tool.ruff]
+line-length = 120
+select = ["E", "F", "I", "U", "N"]
+ignore = ["E501"]
