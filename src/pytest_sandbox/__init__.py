@@ -38,15 +38,16 @@ def xfail_aiohttp(pytestconfig: pytest.Config):
     else:
         try:
             import aiohttp
+
+            monkeypatch = pytest.MonkeyPatch()
+            monkeypatch.setattr(aiohttp.ClientSession, "__init__", xfail)
+
+            yield
+
+            monkeypatch.undo()
+
         except ImportError:
-            return
-
-        monkeypatch = pytest.MonkeyPatch()
-        monkeypatch.setattr(aiohttp.ClientSession, "__init__", xfail)
-
-        yield
-
-        monkeypatch.undo()
+            yield
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -56,12 +57,13 @@ def xfail_httpcore(pytestconfig: pytest.Config):
     else:
         try:
             import httpcore
+
+            monkeypatch = pytest.MonkeyPatch()
+            monkeypatch.setattr(httpcore.Request, "__init__", xfail)
+
+            yield
+
+            monkeypatch.undo()
+
         except ImportError:
-            return
-
-        monkeypatch = pytest.MonkeyPatch()
-        monkeypatch.setattr(httpcore.Request, "__init__", xfail)
-
-        yield
-
-        monkeypatch.undo()
+            yield
