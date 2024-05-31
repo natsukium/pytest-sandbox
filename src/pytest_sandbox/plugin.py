@@ -57,7 +57,10 @@ def xfail_httpcore(pytestconfig: pytest.Config):
             import httpcore
 
             monkeypatch = pytest.MonkeyPatch()
-            monkeypatch.setattr(httpcore.Request, "__init__", xfail)
+            # inspired by respx
+            # https://github.com/lundberg/respx/blob/1f55faa934ed821cdc0f29186d28ad4614493673/respx/mocks.py#L262-L272
+            monkeypatch.setattr(httpcore._sync.connection.HTTPConnection, "handle_request", xfail)
+            monkeypatch.setattr(httpcore._async.connection.AsyncHTTPConnection, "handle_async_request", xfail)
 
             yield
 
