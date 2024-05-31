@@ -55,6 +55,9 @@ distribution = true
 source = "file"
 path = "src/pytest_sandbox/__init__.py"
 
+[tool.pdm.scripts]
+debug = "unshare -rn pytest -m 'not network'"
+
 [tool.pytest.ini_options]
 markers = ["network: mark tests that require internet access"]
 
