@@ -32,7 +32,7 @@ classifiers = [
 ]
 
 [project.entry-points.pytest11]
-pytest-sandbox = "pytest_sandbox"
+sandbox = "pytest_sandbox.plugin"
 
 [project.urls]
 Homepage = "https://github.com/natsukium/pytest-sandbox"
