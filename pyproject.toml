@@ -48,6 +48,7 @@ testing = [
   "requests>=2.32.3",
   "respx>=0.21.1",
   "fsspec>=2024.6.0",
+  "pycares>=4.4.0",
 ]
 
 [tool.pdm]

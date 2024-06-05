@@ -1,3 +1,4 @@
+# type: ignore
 import urllib.request
 
 import pytest
@@ -63,3 +64,37 @@ def test_fsspec_httpfilesystem(url: str):
     # xfail from aiohttp is silently killed and returns None
     assert fs.cat(url) is None
     raise RuntimeError("HTTPFileSystem is not xfailed")
+
+
+def test_pycares():
+    pytest.importorskip("pycares")
+    import select
+
+    import pycares
+
+    def wait(channel: pycares.Channel):
+        while True:
+            read_fds, write_fds = channel.getsock()
+            if not read_fds and not write_fds:
+                break
+            timeout = channel.timeout()
+            if timeout == 0.0:
+                channel.process_fd(pycares.ARES_SOCKET_BAD, pycares.ARES_SOCKET_BAD)
+                continue
+            rlist, wlist, _ = select.select(read_fds, write_fds, [], timeout)
+            for fd in rlist:
+                channel.process_fd(fd, pycares.ARES_SOCKET_BAD)
+            for fd in wlist:
+                channel.process_fd(pycares.ARES_SOCKET_BAD, fd)
+
+    result, errono = None, None
+
+    def callback(res: int | None, err: int | None):
+        nonlocal result, errono
+        result, errono = res, err
+
+    channel = pycares.Channel(timeout=10.0, tries=1, servers=["8.8.8.8", "8.8.4.4"])
+    channel.getaddrinfo("example.com", "http", callback)
+    wait(channel)
+    assert errono is None
+    raise RuntimeError("Network access is prohibited in the sandbox")

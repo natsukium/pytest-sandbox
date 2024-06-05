@@ -87,3 +87,22 @@ def xfail_fsspec(pytestconfig: pytest.Config):
 
         except ImportError:
             yield
+
+
+@pytest.fixture(scope="session", autouse=True)
+def xfail_pycares(pytestconfig: pytest.Config):
+    if pytestconfig.getoption("--allow-network"):
+        yield
+    else:
+        try:
+            import pycares
+
+            monkeypatch = pytest.MonkeyPatch()
+            monkeypatch.setattr(pycares.Channel, "__init__", xfail)
+
+            yield
+
+            monkeypatch.undo()
+
+        except ImportError:
+            yield
