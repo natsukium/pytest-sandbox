@@ -53,3 +53,13 @@ try:
         assert response.status_code == 204
 except ImportError:
     ...
+
+
+def test_fsspec_httpfilesystem(url: str):
+    pytest.importorskip("fsspec")
+    from fsspec.implementations.http import HTTPFileSystem
+
+    fs = HTTPFileSystem()
+    # xfail from aiohttp is silently killed and returns None
+    assert fs.cat(url) is None
+    raise RuntimeError("HTTPFileSystem is not xfailed")

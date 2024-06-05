@@ -68,3 +68,22 @@ def xfail_httpcore(pytestconfig: pytest.Config):
 
         except ImportError:
             yield
+
+
+@pytest.fixture(scope="session", autouse=True)
+def xfail_fsspec(pytestconfig: pytest.Config):
+    if pytestconfig.getoption("--allow-network"):
+        yield
+    else:
+        try:
+            from fsspec.implementations.http import HTTPFileSystem
+
+            monkeypatch = pytest.MonkeyPatch()
+            monkeypatch.setattr(HTTPFileSystem, "__init__", xfail)
+
+            yield
+
+            monkeypatch.undo()
+
+        except ImportError:
+            yield
