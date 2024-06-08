@@ -149,6 +149,7 @@
                   config.pre-commit.settings.package
                   config.treefmt.build.wrapper
                   config.packages.default
+                  pkgs.commitizen
                 ]
                 ++ map (x: (pkgs.lib.head (pkgs.lib.attrValues x)).public) (
                   pkgs.lib.attrValues config.packages.pytest-sandbox.config.groups.testing.packages

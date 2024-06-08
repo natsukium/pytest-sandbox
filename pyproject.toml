@@ -4,7 +4,7 @@ build-backend = "pdm.backend"
 
 [project]
 name = "pytest-sandbox"
-dynamic = ["version"]
+version = "0.0.1"
 description = "disable network access in pytest and mark xfail"
 keywords = ["pytest", "sandbox"]
 authors = [{ name = "natsukium", email = "tomoya.otabi@gmail.com" }]
@@ -54,12 +54,15 @@ testing = [
 [tool.pdm]
 distribution = true
 
-[tool.pdm.version]
-source = "file"
-path = "src/pytest_sandbox/__init__.py"
-
 [tool.pdm.scripts]
 debug = "unshare -rn pytest -m 'not network'"
+
+[tool.commitizen]
+version_provider = "pep621"
+version_files = ["pyproject.toml:version", "src/pytest_sandbox/__init__.py"]
+gpg_sign = true
+update_changelog_on_bump = true
+major_version_zero = true
 
 [tool.pytest.ini_options]
 markers = ["network: mark tests that require internet access"]
