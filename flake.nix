@@ -98,11 +98,26 @@
               src = ./.;
               hooks = {
                 ruff.enable = true;
-                pyright = {
-                  enable = true;
-                  package = pkgs.basedpyright;
-                  entry = "${pkgs.lib.getExe pkgs.basedpyright}";
-                };
+                pyright =
+                  let
+                    pyEnv = pkgs.python3.withPackages (
+                      _:
+                      map (x: (pkgs.lib.head (pkgs.lib.attrValues x)).public) (
+                        pkgs.lib.attrValues config.packages.pytest-sandbox.config.groups.default.packages
+                      )
+                      ++ map (x: (pkgs.lib.head (pkgs.lib.attrValues x)).public) (
+                        pkgs.lib.attrValues config.packages.pytest-sandbox.config.groups.testing.packages
+                      )
+                    );
+                    wrapped-pyright = pkgs.runCommand "pyright" { nativeBuildInputs = [ pkgs.makeWrapper ]; } ''
+                      makeWrapper ${pkgs.lib.getExe pkgs.basedpyright} $out/bin/pyright \
+                        --set PYTHONPATH ${pyEnv}/${pyEnv.sitePackages}
+                    '';
+                  in
+                  {
+                    enable = true;
+                    package = wrapped-pyright;
+                  };
 
                 typos.enable = true;
 
