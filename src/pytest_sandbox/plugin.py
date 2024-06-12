@@ -5,14 +5,29 @@ from typing import Any
 
 import pytest
 
+from .exceptions import NetworkAccessError
+
 
 def pytest_addoption(parser: pytest.Parser):
     group = parser.getgroup("sandbox", "sandbox test helper")
     group.addoption("--allow-network", action="store_true", help="Allow network access", default=False)
 
 
-def xfail(*args: Any, **kwargs: Any):
-    pytest.xfail("try to access network")
+@pytest.hookimpl
+def pytest_runtest_call(item: pytest.Item):
+    """
+
+    Args:
+        item:
+    """
+    try:
+        item.runtest()
+    except NetworkAccessError:
+        pytest.xfail("Network Access is forbidden in sandbox")
+
+
+def guard(*args: Any, **kwargs: Any):
+    raise NetworkAccessError("Network access is prohibited in sandbox")
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -22,7 +37,7 @@ def xfail_http(pytestconfig: pytest.Config):
 
     else:
         monkeypatch = pytest.MonkeyPatch()
-        monkeypatch.setattr(http.client.HTTPConnection, "__init__", xfail)
+        monkeypatch.setattr(http.client.HTTPConnection, "__init__", guard)
 
         yield
 
@@ -38,7 +53,7 @@ def xfail_aiohttp(pytestconfig: pytest.Config):
             import aiohttp
 
             monkeypatch = pytest.MonkeyPatch()
-            monkeypatch.setattr(aiohttp.ClientSession, "__init__", xfail)
+            monkeypatch.setattr(aiohttp.ClientSession, "__init__", guard)
 
             yield
 
@@ -59,8 +74,8 @@ def xfail_httpcore(pytestconfig: pytest.Config):
             monkeypatch = pytest.MonkeyPatch()
             # inspired by respx
             # https://github.com/lundberg/respx/blob/1f55faa934ed821cdc0f29186d28ad4614493673/respx/mocks.py#L262-L272
-            monkeypatch.setattr(httpcore._sync.connection.HTTPConnection, "handle_request", xfail)
-            monkeypatch.setattr(httpcore._async.connection.AsyncHTTPConnection, "handle_async_request", xfail)
+            monkeypatch.setattr(httpcore._sync.connection.HTTPConnection, "handle_request", guard)
+            monkeypatch.setattr(httpcore._async.connection.AsyncHTTPConnection, "handle_async_request", guard)
 
             yield
 
@@ -79,7 +94,7 @@ def xfail_fsspec(pytestconfig: pytest.Config):
             from fsspec.implementations.http import HTTPFileSystem
 
             monkeypatch = pytest.MonkeyPatch()
-            monkeypatch.setattr(HTTPFileSystem, "__init__", xfail)
+            monkeypatch.setattr(HTTPFileSystem, "__init__", guard)
 
             yield
 
@@ -98,7 +113,7 @@ def xfail_pycares(pytestconfig: pytest.Config):
             import pycares
 
             monkeypatch = pytest.MonkeyPatch()
-            monkeypatch.setattr(pycares.Channel, "__init__", xfail)
+            monkeypatch.setattr(pycares.Channel, "__init__", guard)
 
             yield
 
