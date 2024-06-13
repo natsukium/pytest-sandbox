@@ -15,6 +15,6 @@ def test_allow_network(pytester: pytest.Pytester):
                 assert res.status == 200
     """)
 
-    result = pytester.runpytest(file, "-v", "--allow-network")
+    result = pytester.runpytest_subprocess(file, "-v", "--allow-network")
     result.stdout.fnmatch_lines(["*test_urllib PASSED*"])
     assert result.ret == 0
