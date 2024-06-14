@@ -37,59 +37,92 @@
       perSystem =
         { config, pkgs, ... }:
         {
-          packages = {
-            default = config.packages.pytest-sandbox;
-            pytest-sandbox = inputs.dream2nix.lib.evalModules {
-              packageSets.nixpkgs = pkgs;
-              modules = [
+          packages =
+            let
+              pytest-sandbox-with = pkgs.lib.makeOverridable (
                 {
-
-                  imports = [ inputs.dream2nix.modules.dream2nix.WIP-python-pdm ];
-
-                  deps =
-                    { nixpkgs, ... }:
+                  python ? "python311",
+                  doCheck ? false,
+                }:
+                inputs.dream2nix.lib.evalModules {
+                  packageSets.nixpkgs = pkgs;
+                  modules = [
                     {
-                      python = nixpkgs.python3;
-                    };
 
-                  mkDerivation =
-                    let
-                      inherit (pkgs) lib;
-                    in
-                    {
-                      src = lib.cleanSourceWith {
-                        src = lib.cleanSource ./.;
-                        filter =
-                          name: type:
-                          !(builtins.any (x: x) [
-                            (lib.hasSuffix ".nix" name)
-                            (lib.hasPrefix "." (builtins.baseNameOf name))
-                            (lib.hasSuffix "flake.lock" name)
-                          ]);
+                      imports = [ inputs.dream2nix.modules.dream2nix.WIP-python-pdm ];
+
+                      deps =
+                        { nixpkgs, ... }:
+                        {
+                          python = nixpkgs."${python}";
+                        };
+
+                      mkDerivation =
+                        let
+                          inherit (pkgs) lib;
+                          inherit (config.packages.pytest-sandbox.config.deps) python;
+                        in
+                        {
+                          src = lib.cleanSourceWith {
+                            src = lib.cleanSource ./.;
+                            filter =
+                              name: type:
+                              !(builtins.any (x: x) [
+                                (lib.hasSuffix ".nix" name)
+                                (lib.hasPrefix "." (builtins.baseNameOf name))
+                                (lib.hasSuffix "flake.lock" name)
+                              ]);
+                          };
+                          inherit doCheck;
+                          nativeCheckInputs =
+                            [ python.pkgs.pytestCheckHook ]
+                            ++ map (x: (pkgs.lib.head (pkgs.lib.attrValues x)).public) (
+                              pkgs.lib.attrValues config.packages.pytest-sandbox.config.groups.testing.packages
+                            );
+                        };
+
+                      pdm = {
+                        lockfile = ./pdm.lock;
+                        pyproject = ./pyproject.toml;
                       };
-                    };
 
-                  pdm = {
-                    lockfile = ./pdm.lock;
-                    pyproject = ./pyproject.toml;
-                  };
-
-                  buildPythonPackage = {
-                    pyproject = true;
-                    format = null;
-                    build-system = [ pkgs.python3Packages.pdm-backend ];
-                    pythonImportsCheck = [ "pytest_sandbox" ];
-                  };
+                      buildPythonPackage =
+                        let
+                          inherit (config.packages.pytest-sandbox.config.deps) python;
+                        in
+                        {
+                          pyproject = true;
+                          format = null;
+                          build-system = [ python.pkgs.pdm-backend ];
+                          pythonImportsCheck = [ "pytest_sandbox" ];
+                          pytestFlagsArray = [ "-m 'not network'" ];
+                        };
+                    }
+                    {
+                      paths = {
+                        projectRoot = ./.;
+                        projectRootFile = "flake.nix";
+                        package = ./.;
+                      };
+                    }
+                  ];
                 }
-                {
-                  paths = {
-                    projectRoot = ./.;
-                    projectRootFile = "flake.nix";
-                    package = ./.;
-                  };
-                }
-              ];
+              );
+            in
+            {
+              default = config.packages.pytest-sandbox;
+              pytest-sandbox = pytest-sandbox-with { };
+              pytest-sandbox-39 = pytest-sandbox-with { python = "python39"; };
+              pytest-sandbox-310 = pytest-sandbox-with { python = "python310"; };
+              pytest-sandbox-311 = pytest-sandbox-with { python = "python311"; };
+              pytest-sandbox-312 = pytest-sandbox-with { python = "python312"; };
             };
+
+          checks = {
+            python39 = config.packages.pytest-sandbox-39.override { doCheck = true; };
+            python310 = config.packages.pytest-sandbox-310.override { doCheck = true; };
+            python311 = config.packages.pytest-sandbox-311.override { doCheck = true; };
+            python312 = config.packages.pytest-sandbox-312.override { doCheck = true; };
           };
 
           pre-commit = {
@@ -143,22 +176,15 @@
           devShells = {
             default = pkgs.mkShell {
               inputsFrom = [ config.packages.pytest-sandbox.devShell ];
-              packages =
-                [
-                  config.pre-commit.settings.enabledPackages
-                  config.pre-commit.settings.package
-                  config.treefmt.build.wrapper
-                  config.packages.default
-                  pkgs.commitizen
-                ]
-                ++ map (x: (pkgs.lib.head (pkgs.lib.attrValues x)).public) (
-                  pkgs.lib.attrValues config.packages.pytest-sandbox.config.groups.testing.packages
-                );
-              shellHook =
-                config.pre-commit.installationScript
-                + ''
-                  export PYTHONPATH=./src:$PYTHONPATH
-                '';
+              packages = [
+                config.pre-commit.settings.enabledPackages
+                config.pre-commit.settings.package
+                config.treefmt.build.wrapper
+                config.packages.pytest-sandbox
+                pkgs.python311Packages.editables
+                pkgs.commitizen
+              ];
+              shellHook = config.pre-commit.installationScript;
             };
           };
         };

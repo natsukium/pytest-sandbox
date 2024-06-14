@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-import socket
+# import socket
+import http.client
 from typing import Any, Callable, Generator, NoReturn
 
 import pytest
@@ -27,31 +28,31 @@ def raise_error(*args: Any, **kwargs: Any):
 
 
 def patch(monkeypatch: pytest.MonkeyPatch, block_method: Callable[[Any], NoReturn] = raise_error):
-    monkeypatch.setattr(socket.socket, "connect", block_method)
-    monkeypatch.setattr(socket.socket, "connect_ex", block_method)
-    # monkeypatch.setattr(http.client.HTTPConnection, "__init__", block_method)
-    # try:
-    #     import aiohttp
-    #
-    #     monkeypatch.setattr(aiohttp.ClientSession, "__init__", block_method)
-    # except ImportError:
-    #     ...
-    # try:
-    #     import httpcore
-    #
-    #     # inspired by respx
-    #     # https://github.com/lundberg/respx/blob/1f55faa934ed821cdc0f29186d28ad4614493673/respx/mocks.py#L262-L272
-    #     monkeypatch.setattr(httpcore._sync.connection.HTTPConnection, "handle_request", block_method)
-    #     monkeypatch.setattr(httpcore._async.connection.AsyncHTTPConnection, "handle_async_request", block_method)
-    #
-    # except ImportError:
-    #     ...
-    # try:
-    #     from fsspec.implementations.http import HTTPFileSystem
-    #
-    #     monkeypatch.setattr(HTTPFileSystem, "__init__", block_method)
-    # except ImportError:
-    #     ...
+    # monkeypatch.setattr(socket.socket, "connect", block_method)
+    # monkeypatch.setattr(socket.socket, "connect_ex", block_method)
+    monkeypatch.setattr(http.client.HTTPConnection, "__init__", block_method)
+    try:
+        import aiohttp
+
+        monkeypatch.setattr(aiohttp.ClientSession, "__init__", block_method)
+    except ImportError:
+        ...
+    try:
+        import httpcore
+
+        # inspired by respx
+        # https://github.com/lundberg/respx/blob/1f55faa934ed821cdc0f29186d28ad4614493673/respx/mocks.py#L262-L272
+        monkeypatch.setattr(httpcore._sync.connection.HTTPConnection, "handle_request", block_method)
+        monkeypatch.setattr(httpcore._async.connection.AsyncHTTPConnection, "handle_async_request", block_method)
+
+    except ImportError:
+        ...
+    try:
+        from fsspec.implementations.http import HTTPFileSystem
+
+        monkeypatch.setattr(HTTPFileSystem, "__init__", block_method)
+    except ImportError:
+        ...
     try:
         import pycares
 
