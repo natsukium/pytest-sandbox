@@ -164,6 +164,7 @@ cython_debug/
 
 # Nix
 result
+.dream2nix/
 
 # pre-commit
 .pre-commit-config.yaml
