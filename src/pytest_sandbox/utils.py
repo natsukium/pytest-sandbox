@@ -1,4 +1,18 @@
+import sys
 from typing import Callable, Iterator, TypeVar
+
+if sys.version_info >= (3, 11):
+    has_exception_group = True
+else:
+    try:
+        from exceptiongroup import ExceptionGroup
+
+        has_exception_group = True
+    except ImportError:
+        # dummy class for compatibility
+        class ExceptionGroup: ...
+
+        has_exception_group = False
 
 S = TypeVar("S")
 T = TypeVar("T")
@@ -25,3 +39,25 @@ def extract_all_exceptions(exc: BaseException) -> Iterator[BaseException]:
             return e, None
 
     return unfold(f, exc)
+
+
+def expand_exception_group(exc: Exception) -> Iterator[Exception]:
+    # def f_compat(es: tuple[Exception, ...]):
+    #     if len(es) == 0:
+    #         return None
+    #     else:
+    #         return es[0], es[1:]
+    #
+    # if compat:
+    #     return unfold(f_compat, (exc,))
+
+    def f(es: tuple[Exception, ...]):
+        if len(es) == 0:
+            return None
+        elif isinstance(es[0], ExceptionGroup):
+            e: ExceptionGroup[Exception] = es[0]
+            return e, (*es[1:], *e.exceptions)
+        else:
+            return es[0], es[1:]
+
+    return unfold(f, (exc,))
